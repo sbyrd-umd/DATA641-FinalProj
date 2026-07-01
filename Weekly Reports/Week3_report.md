@@ -1,6 +1,6 @@
 ---
 team: Inflection
-week: 5
+week: 3
 date: 2026-7-1
 members:
   - name: Alessandro Vivaldi
