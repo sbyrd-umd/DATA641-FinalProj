@@ -9,13 +9,13 @@ members:
   - name: Sawyer
     github: sbyrd-umd
     hat: Product | Engineering | Data&Eval
-  - name: <name>
-    github: <handle>
+  - name: Andrew Liu
+    github: AndrewLiu-1
     hat: Product | Engineering | Data&Eval
 north_star:
   metric: Working translation layer
   value: working
-  previous: N/A
+  previous: Hone concept and idea and start structuring
 ---
 
 ## Shipped this week
