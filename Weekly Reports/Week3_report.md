@@ -1,7 +1,7 @@
 ---
 team: Inflection
 week: 3
-date: 2026-7-1
+date: 2026-6-24
 members:
   - name: Alessandro Vivaldi
     github: xandrov1
