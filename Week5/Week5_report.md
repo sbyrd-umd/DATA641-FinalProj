@@ -1,16 +1,16 @@
 ---
-team: <your-company-name>
+team: <Inflection>
 week: 5
 date: 2026-7-1
 members:
   - name: Alessandro Vivaldi
     github: xandrov1
     hat: Product | Engineering | Data&Eval
-  - name: <name>
-    github: <handle>
+  - name: <Andrew Liu>
+    github: <AndrewLiu-1>
     hat: Product | Engineering | Data&Eval
-  - name: <name>
-    github: <handle>
+  - name: <Sawyer Byrd>
+    github: <sawyerbyrd>
     hat: Product | Engineering | Data&Eval
 north_star:
   metric: <e.g. task success rate>
