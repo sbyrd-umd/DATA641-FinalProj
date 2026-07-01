@@ -1,15 +1,13 @@
 # DATA641-FinalProj
 
-**Persona:** A team lead or QA manager at a mid-size company (50–150 agents) who reviews customer service call transcripts to assess how badly individual calls went.
+**Persona:** A QA manager or team lead at a BPO or international support org whose agents now handle calls in languages neither the agent nor the manager speaks
 
-**Pain:** Tone, the actual signal of how upset someone was, doesn't survive in a transcript. She's left inferring frustration from word choice alone, after the call is already over, which means she catches problems too late to coach in real time or flag at-risk accounts before they churn.
+**Pain:**  The agent already can't hear tone in a foreign language even with translation running (translation renders words, not feeling), and when she reviews the call afterward, she's reading a translated transcript that's lost whatever emotional signal survived the live call in the first place.
 
-**Hack:** Manually reading transcripts and taking notes. She knows enterprise tools (like SupportLogic) solve this with actual voice-tone detection, but that's priced and scaled for companies well beyond her team's size, so she's stuck with text-only judgment.
+**Hack:** Nothing... she doesn't speak the language. So you must hire an entire team that speaks that language
 
-**Problem**: Analysing the quality of a customer support call can be subjective and tedious (Human analysis), tone deaf (automated transcript analysis), and if automated is never in real time.
+**Solution**: A tone-detection layer that reads the original audio directly (before or in parallel with translation), flags emotional intensity/distress in real time regardless of language, and archives it alongside the translated transcript. If we have time, feed both into live coaching LLM.
 
-**Solution**: We wish to build a real time, sentiment analysis tool to analyse customer service calls, provide feedback, and archive with call summaries.
+**Why us**: Products like this exist (CallMiner's LiveTranslate) and has more features. However, from our research, there is only one other company in this market which means almost no competition.
 
-**Why us**: While similar tools exist, they all rely on audio transcripts (text based) and only analyse after the fact. Our product will take this a step further with real time audio analysis.
-
-A user can **use our product in real time** and get **sentiment analysis, feedback, and archival summaries**.
+A user can **use our product in real time** and get **live translation PAIRED WITH live sentiment analysis and live feedback coaching**.
