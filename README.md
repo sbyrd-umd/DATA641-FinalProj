@@ -11,3 +11,12 @@
 **Why us**: Products like this exist (CallMiner's LiveTranslate) and has more features. However, from our research, there is only one other company in this market which means almost no competition.
 
 A user can **use our product in real time** and get **live translation PAIRED WITH live sentiment analysis and live feedback coaching**.
+
+
+**Structure:**
+- Sentiment analysis via open source like wav2vec2
+- LLM for coaching/summary layer
+- DONT build the translator, there are APIs that already exist which we can leverage.
+- Run translator and Sentiment analysis in parallel and feed into LLM for live feedback
+
+
