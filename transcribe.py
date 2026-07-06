@@ -4,6 +4,7 @@ from deepgram import DeepgramClient
 from deepgram.core.events import EventType
 from dotenv import load_dotenv
 import os
+from deep_translator import GoogleTranslator
 
 # ============================================================
 # Config
@@ -15,23 +16,52 @@ RATE = 16000 # Samples per second
 CHUNK = 1024 # How many audio samples are bundled together before sending back to api
 client = DeepgramClient(api_key=os.getenv("DEEPGRAM_API_KEY"))
 
+# User picks language to translate from
+LANGUAGES = {
+    "1": ("English", "en"),
+    "2": ("Spanish", "es"),
+    "3": ("French", "fr"),
+    "4": ("German", "de"),
+    "5": ("Italian", "it"),
+    "6": ("Portuguese", "pt"),
+    "7": ("Japanese", "ja"),
+    "8": ("Chinese", "zh"),
+    "9": ("Arabic", "ar"),
+    "10": ("Hindi", "hi"),
+}
+
+print("Select source language:")
+for key, (name, code) in LANGUAGES.items():
+    print(f"  {key}. {name}")
+
+while True:
+    choice = input("Enter number: ").strip()
+    if choice in LANGUAGES:
+        lang_name, lang_code = LANGUAGES[choice]
+        print(f"Selected: {lang_name}")
+        break
+    print("Invalid choice, try again.")
+
 # ============================================================
 # API connection and real time transcript printing
 # ============================================================
 with client.listen.v1.connect(
     model="nova-3",
-    language="en",
+    language=lang_code,
     encoding="linear16",
     sample_rate=RATE,
 ) as connection:
 
     ready = threading.Event() # Ready to send audio flag initialised, synchronizes threads (main and stream)
 
-    def on_message(result): # Prints transcript back
-        if result.type == "Results": 
+    def on_message(result): # Prints transcript back (in original language), with translation to English
+        if result.type == "Results":
             transcript = result.channel.alternatives[0].transcript # Grab top confidence transcript from JSON
             if transcript:
-                print(f"Transcript: {transcript}")
+                print(f"Original ({lang_name}): {transcript}") # Print transcript in original
+                if lang_code != "en":
+                    translated = GoogleTranslator(source=lang_code, target="en").translate(transcript) # Print translated transcript (in English)
+                    print(f"English: {translated}")
 
     # Event listeners
     connection.on(EventType.OPEN, lambda _: ready.set()) # When connection ready set ready to send audio flag on go

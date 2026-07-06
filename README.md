@@ -19,4 +19,48 @@ A user can **use our product in real time** and get **live translation PAIRED WI
 - DONT build the translator, there are APIs that already exist which we can leverage.
 - Run translator and Sentiment analysis in parallel and feed into LLM for live feedback
 
+--- 
 
+## Setup
+
+### Prerequisites
+- Python 3.x
+- A Deepgram API key - sign up free at [deepgram.com](https://deepgram.com)
+
+### Installation
+#### 1. Clone repo: 
+```bash
+git clone <repo-url>
+cd DATA641-FinalProj
+```
+
+#### 2. Create a virtual environment outside the repo folder:
+```bash
+python -m venv ../SERvenv
+```
+
+#### 3. Activate it:
+Windows
+```bash
+..\SERvenv\Scripts\activate
+```
+Mac/Linux
+```bash
+source ../SERvenv/bin/activate
+```
+
+#### 4. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+#### 5. Create a .env file in the root of the repo:
+```
+DEEPGRAM_API_KEY=your_key_here
+```
+
+### Running
+```bash 
+python transcribe.py
+```
+You will be prompted to select a source language. Once selected, speak into your microphone and the terminal will print the original transcript alongside the English translation in real time.
