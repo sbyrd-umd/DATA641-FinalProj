@@ -1,4 +1,3 @@
-from jupyterlab_server import translator
 import pyaudio
 import threading
 from deepgram import DeepgramClient
