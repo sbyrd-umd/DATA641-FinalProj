@@ -1,3 +1,4 @@
+from jupyterlab_server import translator
 import pyaudio
 import threading
 from deepgram import DeepgramClient
@@ -16,52 +17,60 @@ RATE = 16000 # Samples per second
 CHUNK = 1024 # How many audio samples are bundled together before sending back to api
 client = DeepgramClient(api_key=os.getenv("DEEPGRAM_API_KEY"))
 
-# User picks language to translate from
+# List of languages supported by Deepgram API (for real time transcription)
 LANGUAGES = {
-    "1": ("English", "en"),
-    "2": ("Spanish", "es"),
-    "3": ("French", "fr"),
-    "4": ("German", "de"),
-    "5": ("Italian", "it"),
-    "6": ("Portuguese", "pt"),
-    "7": ("Japanese", "ja"),
-    "8": ("Chinese", "zh"),
-    "9": ("Arabic", "ar"),
-    "10": ("Hindi", "hi"),
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "hi": "Hindi",
+    "ru": "Russian",
+    "pt": "Portuguese",
+    "ja": "Japanese",
+    "it": "Italian",
+    "nl": "Dutch",
 }
 
-print("Select source language:")
-for key, (name, code) in LANGUAGES.items():
-    print(f"  {key}. {name}")
+# Removed the user input for language selection
+# Added cache for each GoogleTranslator object per language detected 
+# instead of rebuilding every line.
+# Defailts to English if language not supported by Deepgram API
 
-while True:
-    choice = input("Enter number: ").strip()
-    if choice in LANGUAGES:
-        lang_name, lang_code = LANGUAGES[choice]
-        print(f"Selected: {lang_name}")
-        break
-    print("Invalid choice, try again.")
+translators = {}
+def get_translator(lang_code):
+    if lang_code not in translators:
+        translators[lang_code] = GoogleTranslator(source=lang_code, target="en")
+    return translators[lang_code]
 
 # ============================================================
 # API connection and real time transcript printing
 # ============================================================
 with client.listen.v1.connect(
     model="nova-3",
-    language=lang_code,
+    language="multi",   # allows constant language detection
     encoding="linear16",
     sample_rate=RATE,
+    endpointing=100,    # recomended setting by deepgram
 ) as connection:
 
     ready = threading.Event() # Ready to send audio flag initialised, synchronizes threads (main and stream)
 
     def on_message(result): # Prints transcript back (in original language), with translation to English
         if result.type == "Results":
-            transcript = result.channel.alternatives[0].transcript # Grab top confidence transcript from JSON
-            if transcript:
-                print(f"Original ({lang_name}): {transcript}") # Print transcript in original
-                if lang_code != "en":
-                    translated = GoogleTranslator(source=lang_code, target="en").translate(transcript) # Print translated transcript (in English)
-                    print(f"English: {translated}")
+            alt = result.channel.alternatives[0]
+            transcript = alt.transcript    # grab top confidence transcript
+            
+            if transcript: # If transcript is not empty
+                detected = getattr(alt, "language", None) or [] # grab detected language
+                lang_code = detected[0] if detected else "en" # grab the first detected language or default to English
+                lang_name = LANGUAGES.get(lang_code, lang_code) # grab the language name or default to code
+
+                # print transcript in original lang
+                print(f"Original ({lang_name}): {transcript}")
+                
+                if lang_code != "en": # If detected language is not English, translate to English
+                    translated = get_translator(lang_code).translate(transcript) # translate to English
+                    print(f"Translated (English): {translated}") # print translated transcript
 
     # Event listeners
     connection.on(EventType.OPEN, lambda _: ready.set()) # When connection ready set ready to send audio flag on go
