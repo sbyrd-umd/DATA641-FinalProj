@@ -61,16 +61,23 @@ with client.listen.v1.connect(
             transcript = alt.transcript    # grab top confidence transcript
             
             if transcript: # If transcript is not empty
-                detected = getattr(alt, "language", None) or [] # grab detected language
-                lang_code = detected[0] if detected else "en" # grab the first detected language or default to English
+                
+                if hasattr(alt, 'languages') and alt.languages:
+                    lang_code = alt.languages[0]    # first lang in list
+                else: 
+                    lang_code = 'en'    # default to english
+                
                 lang_name = LANGUAGES.get(lang_code, lang_code) # grab the language name or default to code
 
                 # print transcript in original lang
                 print(f"Original ({lang_name}): {transcript}")
                 
                 if lang_code != "en": # If detected language is not English, translate to English
-                    translated = get_translator(lang_code).translate(transcript) # translate to English
-                    print(f"Translated (English): {translated}") # print translated transcript
+                    try:
+                        translated = get_translator(lang_code).translate(transcript)
+                        print(f"Translated (English): {translated}")
+                    except Exception as e:
+                        print(f"Translation error: {e}")
 
     # Event listeners
     connection.on(EventType.OPEN, lambda _: ready.set()) # When connection ready set ready to send audio flag on go
