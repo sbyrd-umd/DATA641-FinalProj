@@ -215,10 +215,6 @@ class SentimentAnalyzer:
             "label": describe(valence, arousal, dominance),
             "flagged": flagged,
         }
-        
-        # if label != self._last_label:    # only call on_result if the label has changed since the last inference
-        #     self._last_label = label
-        #     self.on_result(result)
 
         if result["label"] != self._last_label:
             self._last_label = result["label"]
