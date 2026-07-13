@@ -1,4 +1,3 @@
-
 import pyaudio
 import threading
 from deepgram import DeepgramClient
@@ -6,6 +5,8 @@ from deepgram.core.events import EventType
 from dotenv import load_dotenv
 import os
 from deep_translator import GoogleTranslator
+
+from sentiment import SentimentAnalyzer
 
 # ============================================================
 # Config
@@ -42,9 +43,24 @@ def get_translator(lang_code):
         translators[lang_code] = GoogleTranslator(source=lang_code, target="en")
     return translators[lang_code]
 
-# ============================================================
-# API connection and real time transcript printing
-# ============================================================
+
+# =================================================================
+# Sentiment Layer (runs parallel to translation and transcription) |
+# =================================================================
+def on_sentiment_result(result):
+    
+    flag = ' !! ' if result["flagged"] else "    "
+    print(f"{flag}Sentiment: {result['label']}"
+          f"(arousal: {result['arousal']:.2f}, "
+          f"valence: {result['valence']:.2f}, "
+          f"dominance: {result['dominance']:.2f})")
+    
+sentiment = SentimentAnalyzer(on_result=on_sentiment_result, window_seconds=3.0, hop_seconds=1.5, sample_rate=RATE)
+sentiment.start()
+
+# =================================================
+# API connection and real time transcript printing |
+# =================================================
 with client.listen.v1.connect(
     model="nova-3",
     language="multi",   # allows constant language detection
@@ -83,6 +99,8 @@ with client.listen.v1.connect(
     connection.on(EventType.OPEN, lambda _: ready.set()) # When connection ready set ready to send audio flag on go
     connection.on(EventType.MESSAGE, on_message) # When a message arrives on_message
     connection.on(EventType.ERROR, lambda e: print(f"Error: {e}")) # Print any error to terminal
+    
+    stop_flag = threading.Event() # Flag to stop the stream thread when main thread is done
 
     def stream(): # Runs on separate thread (main thread listens for Deepgram API responses)
 
@@ -92,13 +110,27 @@ with client.listen.v1.connect(
         print("Listening... Press Ctrl+C to stop.")
 
         try:
-            while True:
+            while not stop_flag.is_set(): # While main thread is running
                 data = mic.read(CHUNK, exception_on_overflow=False) # Grab next 1024 audio samples, don't crash if buffer fills up
-                connection.send_media(data) # Send chunk to Deepgram (in real time)
-        except KeyboardInterrupt: # On Ctrl + C shutdown mic stream and PyAudio engine
+                
+                try:
+                    connection.send_media(data) # Send chunk to Deepgram (in real time)
+                except Exception as e:
+                    print(f"Error sending media: {e}")
+                    break # Break out of loop if error sending media
+                
+                sentiment.feed(data) # Feed chunk to sentiment analyzer (in real time)
+        finally: # On Ctrl + C shutdown mic stream and PyAudio engine
             mic.stop_stream()
             mic.close()
             audio.terminate()
 
     threading.Thread(target=stream, daemon=True).start() # Launch stream on a separate (background, killed automatically) thread
-    connection.start_listening() # Wait for Deepgram api responses (fires on_message everytime a response arrives)
+    
+    try:
+        connection.start_listening() # Start listening for Deepgram API responses (blocking call)
+    except KeyboardInterrupt: # On Ctrl + C stop the stream thread and exit
+        print("Stopping...")
+    finally:
+        stop_flag.set() # Stop the stream thread
+        sentiment.stop() # Stop the sentiment analyzer
