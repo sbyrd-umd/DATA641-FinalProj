@@ -1,4 +1,3 @@
-from cProfile import label
 import queue
 import threading
 import time
@@ -27,8 +26,10 @@ SAMPLE_RATE = 16000
 
 # Setting thresholds for flagging high intensity emotions
 # can be used later for fine tuning the LLM
-AROUSAL_THRESHOLD = 0.6     # High energy / high intensity emotions
-VALENCE_THRESHOLD = 0.4     # Low valence / negative emotions
+# AROUSAL_THRESHOLD = 0.6     # High energy / high intensity emotions
+# VALENCE_THRESHOLD = 0.4     # Low valence / negative emotions
+VALENCE_THRESHOLD = 0.65
+AROUSAL_THRESHOLD = 0.65
 
 SILENCE_THRESHOLD = 0.01  # Below this RMS value, we consider the audio to be silence
 
@@ -82,15 +83,25 @@ def describe(valence, arousal, dominance):
     """Describe the emotion based on the valence, arousal and dominance scores.
         This is a simple heuristic that maps the scores to a readable description of the emotion.
     """
-    if valence < VALENCE_THRESHOLD and arousal > AROUSAL_THRESHOLD:
+    # ORIGINAL TUNING
+    # if valence < VALENCE_THRESHOLD and arousal > AROUSAL_THRESHOLD:
+    #     return "High intensity negative emotion"
+    # elif valence < VALENCE_THRESHOLD:
+    #     return "Negative emotion"
+    # elif arousal > AROUSAL_THRESHOLD:
+    #     return "High intensity positive emotion"
+    # else:
+    #     return "Calm / Neutral"
+    
+    # BEST SO FAR (ENGLISH)
+    if valence > VALENCE_THRESHOLD and arousal > AROUSAL_THRESHOLD:
         return "High intensity negative emotion"
-    elif valence < VALENCE_THRESHOLD:
+    elif valence > VALENCE_THRESHOLD:
         return "Negative emotion"
     elif arousal > AROUSAL_THRESHOLD:
         return "High intensity positive emotion"
     else:
         return "Calm / Neutral"
-    
 
 class SentimentAnalyzer:
     """
@@ -192,7 +203,8 @@ class SentimentAnalyzer:
         
         # collect flagged results
         flagged = (
-            arousal > AROUSAL_THRESHOLD or valence < VALENCE_THRESHOLD
+            # arousal > AROUSAL_THRESHOLD or valence < VALENCE_THRESHOLD
+            arousal > AROUSAL_THRESHOLD or valence > VALENCE_THRESHOLD
         )
         
         result = {
@@ -204,8 +216,12 @@ class SentimentAnalyzer:
             "flagged": flagged,
         }
         
-        if label != self._last_label:    # only call on_result if the label has changed since the last inference
-            self._last_label = label
+        # if label != self._last_label:    # only call on_result if the label has changed since the last inference
+        #     self._last_label = label
+        #     self.on_result(result)
+
+        if result["label"] != self._last_label:
+            self._last_label = result["label"]
             self.on_result(result)
                 
 
