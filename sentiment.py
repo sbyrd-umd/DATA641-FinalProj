@@ -60,6 +60,8 @@ class RegressionHead(nn.Module):    # regression not classification because scor
 
 class EmotionModel(Wav2Vec2PreTrainedModel):
     """wav2vec2 model with a regression head for emotion prediction."""
+
+    all_tied_weights_keys = {}  # fix for newer transformers versions
     
     def __init__(self, config):
         super().__init__(config)

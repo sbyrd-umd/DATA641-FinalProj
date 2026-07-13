@@ -1,3 +1,4 @@
 SERvenv/
 .env
 test.py
+*.pyc
