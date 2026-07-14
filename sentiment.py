@@ -24,12 +24,11 @@ from transformers.models.wav2vec2.modeling_wav2vec2 import (
 MODEL_NAME = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
 SAMPLE_RATE = 16000
 
-# Setting thresholds for flagging high intensity emotions
-# can be used later for fine tuning the LLM
-# AROUSAL_THRESHOLD = 0.6     # High energy / high intensity emotions
-# VALENCE_THRESHOLD = 0.4     # Low valence / negative emotions
-VALENCE_THRESHOLD = 0.65
-AROUSAL_THRESHOLD = 0.65
+# Setting the nuetral point and margin for mapping scores
+NUETRAL_VALENCE = 0.4
+NUETRAL_AROUSAL = 0.4
+NUETRAL_DOMINANCE = 0.4
+MARGIN = 0.05
 
 SILENCE_THRESHOLD = 0.01  # Below this RMS value, we consider the audio to be silence
 
@@ -79,9 +78,22 @@ class EmotionModel(Wav2Vec2PreTrainedModel):
         return pooled, logits
 
 
-def describe(valence, arousal, dominance):
+# -----------------------
+# Sentiment Descriptions |
+# -----------------------
+
+def _bucket(value: float, neutral: float, margin: float) -> str:
+    """Bucket the value into 'low', 'neutral' or 'high' based on the neutral value and margin."""
+    if value < neutral - margin:
+        return "low"
+    elif value > neutral + margin:
+        return "high"
+    else:
+        return "neutral"
+
+def describe(valence: float, arousal: float, dominance: float) -> dict:
     """Describe the emotion based on the valence, arousal and dominance scores.
-        This is a simple heuristic that maps the scores to a readable description of the emotion.
+        This is a heuristic that maps the scores to a readable description of the emotion.
     """
     # ORIGINAL TUNING
     # if valence < VALENCE_THRESHOLD and arousal > AROUSAL_THRESHOLD:
@@ -93,15 +105,69 @@ def describe(valence, arousal, dominance):
     # else:
     #     return "Calm / Neutral"
     
-    # BEST SO FAR (ENGLISH)
-    if valence > VALENCE_THRESHOLD and arousal > AROUSAL_THRESHOLD:
-        return "High intensity negative emotion"
-    elif valence > VALENCE_THRESHOLD:
-        return "Negative emotion"
-    elif arousal > AROUSAL_THRESHOLD:
-        return "High intensity positive emotion"
+    
+    ## NEW TUNING
+    v = _bucket(valence, NUETRAL_VALENCE, MARGIN)
+    a = _bucket(arousal, NUETRAL_AROUSAL, MARGIN)
+    d = _bucket(dominance, NUETRAL_DOMINANCE, MARGIN)
+    
+    # distance from the nuetral point
+    # Right now we only use this for flagging
+    # but it can be very usefull for more detailed emotion capture
+    # We can use this to add an extra dimension to the LLM input for better context
+    intensity = (
+        (valence - NUETRAL_VALENCE) ** 2
+        + (arousal - NUETRAL_AROUSAL) ** 2
+        + (dominance - NUETRAL_DOMINANCE) ** 2
+    ) ** 0.5
+    
+    # --- Octant mapping ---
+    # +V+A+D = Exuberant/Excited      -V+A+D = Hostile/Angry
+    # +V-A+D = Relaxed/Content        -V-A+D = Disdainful/Contemptuous
+    # +V+A-D = Dependent/Eager        -V+A-D = Anxious/Distressed
+    # +V-A-D = Docile/Calm            -V-A-D = Bored/Disengaged
+    if v == "high" and a == "high" and d == "high":
+        label = "Excited / Enthusiastic"
+    elif v == "low" and a == "high" and d == "high":
+        label = "Angry / Hostile"
+    elif v == "high" and a == "low" and d == "high":
+        label = "Relaxed / Content"
+    elif v == "low" and a == "low" and d == "high":
+        label = "Disdainful / Contemptuous"
+    elif v == "high" and a == "high" and d == "low":
+        label = "Eager / Enthusiastic (submissive)"
+    elif v == "low" and a == "high" and d == "low":
+        label = "Distressed / Anxious"
+    elif v == "high" and a == "low" and d == "low":
+        label = "Calm / Docile"
+    elif v == "low" and a == "low" and d == "low":
+        label = "Disengaged / Bored"
     else:
-        return "Calm / Neutral"
+        # Any dimension still in the deadzone -> not confident enough
+        # to call a full octant, fall back to a 2-axis read.
+        if v == "low" and a == "high":
+            label = "Negative / Agitated"
+        elif v == "low":
+            label = "Negative"
+        elif a == "high":
+            label = "High energy"
+        else:
+            label = "Calm / Neutral"
+            
+    # Flag for escalation: anything low-valence with meaningful
+    # intensity, regardless of dominance (covers both "angry" and "distressed").
+    flagged = v == "low" and intensity > MARGIN
+
+    return {
+        "label": label,
+        "intensity": round(intensity, 3),
+        "flagged": flagged,
+    }
+    
+
+# -------------------
+# Sentiment Analyzer |
+# -------------------
 
 class SentimentAnalyzer:
     """
@@ -113,8 +179,8 @@ class SentimentAnalyzer:
     def __init__(
         self,
         on_result,
-        window_seconds: float = 6.0,
-        hop_seconds: float = 6.0,
+        window_seconds: float = 8.0,
+        hop_seconds: float = 8.0,
         sample_rate: int = SAMPLE_RATE,
         device: Optional[str] = None,
     ):
@@ -197,23 +263,21 @@ class SentimentAnalyzer:
         input_values = inputs.input_values.to(self.device)  # move the input tensor to the same device as the model (CPU or GPU)
         
         with torch.no_grad():   # disable gradient calculation for inference (saves memory and computation)
-            _, logits = self.model(input_values)   # type: ignore[misc]
+            _, logits = self.model(input_values)
         
-        arousal, valence, dominance = logits[0].tolist()    # convert scores to a list of floats
+        arousal, dominance, valence = logits[0].tolist()    # convert scores to a list of floats
         
-        # collect flagged results
-        flagged = (
-            # arousal > AROUSAL_THRESHOLD or valence < VALENCE_THRESHOLD
-            arousal > AROUSAL_THRESHOLD or valence > VALENCE_THRESHOLD
-        )
+        # collect description and flagged status from the describe function
+        desc = describe(valence, arousal, dominance)
         
         result = {
             "timestamp": time.time(),
             "arousal": round(arousal, 3),
             "dominance": round(dominance, 3),
             "valence": round(valence, 3),
-            "label": describe(valence, arousal, dominance),
-            "flagged": flagged,
+            "label": desc["label"],
+            "intensity": desc["intensity"],
+            "flagged": desc["flagged"],
         }
 
         if result["label"] != self._last_label:
