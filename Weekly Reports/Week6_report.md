@@ -26,7 +26,7 @@ north_star:
 ## This Week's Updates
 - Our new sentiment layer analyzes the original audio, not the translated text. Since the model works on acoustic features (mostly tone/energy/vocal inflections) rather than just the words, it is not specific to any particular language, which very much suits our multilingual use case.
 - We moved from a simple threshold heuristic (our original tuning) to the octant-based mapping over valence/arousal/dominance, which gives richer labels and a tunable "deadzone" for low-confidence readings. The intensity score is currently used only for flagging, but we plan to feed it to the LLM coaching layer as additional context.
-- With the development of the sentiment layer being finalized, both components of our first intended architecture layer are now in play together. The next step is the LLM feedback layer.
+- With the development of the sentiment layer being finalized, both components of our first intended architecture layer are now in play together.
 
 ## Challenges / blockers
 - Running wav2vec2 inference locally in real time with the streaming transcription raises latency and compute concerns.
