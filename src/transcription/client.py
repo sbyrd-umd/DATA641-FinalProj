@@ -93,16 +93,16 @@ def make_on_message(on_utterance=None, print_fn=print):
                 lang_name = LANGUAGES.get(lang_code, lang_code)  # grab the language name or default to code
 
                 # print transcript in original lang
-                print_fn(f"Original ({lang_name}): {transcript}")
+                if result.is_final: # Only print and track on final result
+                    print_fn(f"Original ({lang_name}): {transcript}")
 
-                if lang_code != "en":  # if detected language is not English, translate to English
-                    try:
-                        translated = get_translator(lang_code).translate(transcript)
-                        print_fn(f"Translated (English): {translated}")
-                    except Exception as e:
-                        print_fn(f"Translation error: {e}")
-                        
-                if result.is_final:
+                    if lang_code != "en":  # if detected language is not English, translate to English
+                        try:
+                            translated = get_translator(lang_code).translate(transcript)
+                            print_fn(f"Translated (English): {translated}")
+                        except Exception as e:
+                            print_fn(f"Translation error: {e}")
+                            
                     tracker.add_final(result.start, result.duration, transcript)
                     
         elif result.type == "UtteranceEnd":
