@@ -1,0 +1,10 @@
+Exception in thread Thread-1 (_run):
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 1045, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 982, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\Sawyer Byrd\Desktop\School\MSML641\Final Proj\DATA641-FinalProj\src\sentiment\analyzer.py", line 83, in _run
+    self._buffer = np.concatenate([self._buffer, chunk])  # append the new chunk to the buffer
+                                   ^^^^^^^^^^^^
+AttributeError: 'SentimentAnalyzer' object has no attribute '_buffer'

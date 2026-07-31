@@ -24,28 +24,26 @@ SILENCE_THRESHOLD = 0.01  # Below this RMS value, we consider the audio to be si
 
 class SentimentAnalyzer:
     """
-    Feed raw PCM16 audio chunks (same bytes sent to translator) via .feed().
-    Buffers internally and runs inference on a background thread every 'hop_seconds'.
-    Calls 'on_result(dict)' every reading.
+    Runs wav2vec2-based sentiment inference on discrete audio segments (e.g.
+    one Deepgram utterance at a time) on a background thread, so inference
+    never blocks the caller that's slicing/queuing the audio. Queue a whole
+    segment via .feed_segment(); results come back through on_result(dict).
     """
-
+    
+    # removed window_seconds and hop_seconds because we don't need them anymore
     def __init__(
         self,
         on_result,
-        window_seconds: float = 8.0,
-        hop_seconds: float = 8.0,
         sample_rate: int = SAMPLE_RATE,
         device: Optional[str] = None,
     ):
         self.on_result = on_result
-        self.window_size = int(window_seconds * sample_rate)
-        self.hop_size = int(hop_seconds * sample_rate)
         self.sample_rate = sample_rate
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
         print(
             f"[sentiment] loading {MODEL_NAME} on {self.device}"
-            f"(First run downloads the checkpoint from HuggingFace. ~650MB)..."
+            f"(First run downloads the checkpoint from HuggingFace.)..."
         )
 
         self.processor = Wav2Vec2Processor.from_pretrained(MODEL_NAME)
@@ -57,11 +55,9 @@ class SentimentAnalyzer:
 
         print("[sentiment] model ready.")
 
-        self._buffer = np.zeros(0, dtype=np.float32)  # holds samples until we have enough for a window
         self._queue: "queue.Queue[np.ndarray]" = queue.Queue()  # audio chunks fed from the main thread
         self._stop_event = threading.Event()  # signals the background thread to stop
         self._worker = threading.Thread(target=self._run, daemon=True)  # processes queued audio chunks
-        self._last_label = None  # avoids re-firing on_result for the same label repeatedly
 
     def start(self):
         """Start the background thread for processing audio."""
@@ -71,9 +67,9 @@ class SentimentAnalyzer:
         """Stop the background thread."""
         self._stop_event.set()
 
-    def feed(self, audio_chunk: np.ndarray):
-        """Feed a new audio chunk to the analyzer."""
-        samples = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32) / 32768.0
+    def feed_segment(self, samples: np.ndarray):
+        """Queue one complete audio segment for inference. `samples` should already be
+        float32 in [-1, 1] -- see AudioTimeline.slice_seconds()."""
         self._queue.put(samples)
 
     def _run(self):

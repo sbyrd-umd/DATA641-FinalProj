@@ -1,8 +1,9 @@
 import os
+from typing import List, Optional
 
 from deepgram import DeepgramClient
 
-from ..config import LANGUAGES
+from ..config import LANGUAGES, UTTERANCE_END_MS
 from .translation import get_translator
 
 
@@ -11,23 +12,72 @@ def make_client() -> DeepgramClient:
     return DeepgramClient(api_key=os.getenv("DEEPGRAM_API_KEY"))
 
 
-def open_connection(client: DeepgramClient, sample_rate: int):
-    """Open a real-time Deepgram listen connection with our standard settings."""
+def open_connection(client: DeepgramClient, sample_rate: int, utterance_end_ms: int = UTTERANCE_END_MS):
+    """Open a real-time Deepgram listen connection with our standard settings.
+    
+        interim_results + utterance_end_ms are required for Deepgram to emit
+        UtteranceEnd events.
+    """
     return client.listen.v1.connect(
         model="nova-3",
         language="multi",  # allows constant language detection
         encoding="linear16",
         sample_rate=sample_rate,
         endpointing=100,  # recommended setting by deepgram
+        interim_results=True,   # Required for utterance end
+        utterance_end_ms=utterance_end_ms
     )
 
+# new class to track the utterances
+class _UtteranceTracker:
+    """
+    Accumulates finalized transcript pieces and their time range since the
+    last utterance boundary.
+    """
 
-def make_on_message(print_fn=print):
+    def __init__(self):
+        self._start: Optional[float] = None     # Start time
+        self._end: Optional[float] = None       # End time
+        self._parts: List[str] = []             # transcript parts
+
+    def add_final(self, start: float, duration: float, text: str):
+        """Record a finalized (is_final=True) transcript chunk."""
+        if self._start is None:
+            self._start = start
+        self._end = start + duration
+        if text:
+            self._parts.append(text)
+
+    def close(self, last_word_end: float):
+        """
+        Called on UtteranceEnd. Returns (start, end, text), or None if
+        nothing was accumulated.
+        """
+        if self._start is None:
+            return None
+
+        start = self._start
+        end = max(self._end or last_word_end, last_word_end)
+        text = " ".join(self._parts)
+
+        self._start = None
+        self._end = None
+        self._parts = []
+
+        return start, end, text
+
+
+def make_on_message(on_utterance=None, print_fn=print):
     """
     Build an on_message handler for Deepgram transcription events.
     Prints the transcript in its original language, plus an English
-    translation if the detected language isn't already English.
+    translation if the detected language isn't already English. Also tracks
+    finalized chunks across an utterance, so that when Deepgram signals
+    UtteranceEnd, `on_utterance(start_sec, end_sec, transcript)` is called
+    with that utterance's full time range and text.
     """
+    
+    tracker = _UtteranceTracker()
 
     def on_message(result):
         if result.type == "Results":
@@ -51,5 +101,14 @@ def make_on_message(print_fn=print):
                         print_fn(f"Translated (English): {translated}")
                     except Exception as e:
                         print_fn(f"Translation error: {e}")
+                        
+                if result.is_final:
+                    tracker.add_final(result.start, result.duration, transcript)
+                    
+        elif result.type == "UtteranceEnd":
+            closed = tracker.close(result.last_word_end)
+            if closed and on_utterance:
+                start, end, text = closed
+                on_utterance(start, end, text)
 
     return on_message

@@ -33,13 +33,13 @@ class AudioTimeline:
             self._trim()
 
     def _trim(self):
-        """Drop the oldest chunks once we're holding more than max_buffer_samples."""
+        """Drop the oldest chunks once holding more than max_buffer_samples."""
         buffered = self._total_samples - self._buffer_start_sample
         while buffered > self.max_buffer_samples and self._chunks:
-            oldest = self._chunks.pop(0)
-            n = len(oldest) // BYTES_PER_SAMPLE
-            self._buffer_start_sample += n
-            buffered -= n
+            oldest = self._chunks.pop(0)    # pop the oldest chunk
+            n = len(oldest) // BYTES_PER_SAMPLE     # number of samples
+            self._buffer_start_sample += n      # increment sample start idx
+            buffered -= n   # decrease buffer length
 
     def slice_seconds(self, start_sec: float, end_sec: float) -> Optional[np.ndarray]:
         """
