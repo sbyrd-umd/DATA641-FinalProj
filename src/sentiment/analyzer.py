@@ -74,25 +74,17 @@ class SentimentAnalyzer:
 
     def _run(self):
         """Background thread that processes audio chunks from the queue and runs inference on them."""
+        
         while not self._stop_event.is_set():
             try:
-                chunk = self._queue.get(timeout=0.5)  # wait for a new audio chunk, timeout after 0.5s
+                samples = self._queue.get(timeout=0.5)  # wait for a new audio chunk, timeout after 0.5s
             except queue.Empty:
                 continue
 
-            self._buffer = np.concatenate([self._buffer, chunk])  # append the new chunk to the buffer
-
-            while len(self._buffer) >= self.window_size:  # enough samples for a window -> run inference
-                window = self._buffer[: self.window_size]
-                self._buffer = self._buffer[self.hop_size :]  # hop forward
-
-                # If the window isn't silent, run inference. If it is, reset the last
-                # label so the next non-silent window will trigger on_result again.
-                if not self._is_silent(window):
-                    self._infer(window)
-                else:
-                    self._last_label = None
-                    continue
+            if samples is None or samples.size == 0 or self._is_silent(samples):
+                continue    # nothing worth infering (trimmed/empty slice)
+            
+            self._infer(samples)
 
     @staticmethod
     def _is_silent(window: np.ndarray) -> bool:
@@ -125,6 +117,4 @@ class SentimentAnalyzer:
             "flagged": desc["flagged"],
         }
 
-        if result["label"] != self._last_label:
-            self._last_label = result["label"]
-            self.on_result(result)
+        self.on_result(result)
