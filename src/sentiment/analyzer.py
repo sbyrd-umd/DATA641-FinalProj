@@ -55,7 +55,7 @@ class SentimentAnalyzer:
 
         print("[sentiment] model ready.")
 
-        self._queue: "queue.Queue[np.ndarray]" = queue.Queue()  # audio chunks fed from the main thread
+        self._queue: "queue.Queue[tuple[np.ndarray, Optional[str]]]" = queue.Queue()  # audio chunks fed from the main thread
         self._stop_event = threading.Event()  # signals the background thread to stop
         self._worker = threading.Thread(target=self._run, daemon=True)  # processes queued audio chunks
 
@@ -67,24 +67,24 @@ class SentimentAnalyzer:
         """Stop the background thread."""
         self._stop_event.set()
 
-    def feed_segment(self, samples: np.ndarray):
+    def feed_segment(self, samples: np.ndarray, metadata=None):
         """Queue one complete audio segment for inference. `samples` should already be
         float32 in [-1, 1] -- see AudioTimeline.slice_seconds()."""
-        self._queue.put(samples)
+        self._queue.put((samples, metadata))
 
     def _run(self):
         """Background thread that processes audio chunks from the queue and runs inference on them."""
         
         while not self._stop_event.is_set():
             try:
-                samples = self._queue.get(timeout=0.5)  # wait for a new audio chunk, timeout after 0.5s
+                samples, metadata = self._queue.get(timeout=0.5)  # wait for a new audio chunk, timeout after 0.5s
             except queue.Empty:
                 continue
 
             if samples is None or samples.size == 0 or self._is_silent(samples):
                 continue    # nothing worth infering (trimmed/empty slice)
             
-            self._infer(samples)
+            self._infer(samples, metadata)
 
     @staticmethod
     def _is_silent(window: np.ndarray) -> bool:
@@ -92,7 +92,7 @@ class SentimentAnalyzer:
         rms = float(np.sqrt(np.mean(window**2)))
         return rms < SILENCE_THRESHOLD
 
-    def _infer(self, window: np.ndarray):
+    def _infer(self, window: np.ndarray, metadata=None):
         """Run inference on a single audio window."""
         # The processor takes care of resampling, normalization, and padding.
         inputs = self.processor(
@@ -115,6 +115,7 @@ class SentimentAnalyzer:
             "label": desc["label"],
             "intensity": desc["intensity"],
             "flagged": desc["flagged"],
+            "metadata": metadata,
         }
 
         self.on_result(result)
