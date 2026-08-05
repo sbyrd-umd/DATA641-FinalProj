@@ -1,0 +1,8 @@
+1. Lock in the emotion taxonomy - pick a fixed label set (e.g. happy, sad, angry, fearful, neutral) that both the wav2vec2 model's describe() output and Ollama's new sentiment field will map to, so the two are directly comparable.
+2. Add structured sentiment output to Ollama - update SYSTEM_PROMPT in prompts.py to require a sentiment label before the coaching note (e.g. JSON with sentiment and note keys), then update OllamaClient.chat() and coach.py to parse both fields separately, so the label isn't contaminated by the advice text. (First double check this way doesn't contaminate as well)
+3. Build the synthetic generator - prompt a separate LLM to produce short utterances tagged with ground-truth emotions from taxonomy, ~10–20 per label to start.
+4. Human-validate a subset - have a person confirm a sample of the generator's labels actually match, so ground truth is trustworthy before scoring against it.
+5. Run the full pipeline on the test set - feed each utterance through wav2vec2 sentiment, then Ollama, logging: wav2vec2 label, Ollama sentiment label, and ground truth, per sample.
+6. Score each stage separately - build a confusion matrix + accuracy for wav2vec2 alone, and another for Ollama's sentiment field alone.
+7. Experiment with fusion - start with a confidence-weighted average of the two labels/scores, compare fused output against human judgment, and note where it disagrees most.
+8. Iterate - adjust weighting or add override rules (e.g. tone wins on disagreement) based on where fusion misses, then re-test.
