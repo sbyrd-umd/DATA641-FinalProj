@@ -41,5 +41,5 @@ north_star:
 
 ## Individual contributions
 - Sawyer Byrd (Engineer): Completed and merged the utterance-aligned sentiment pipeline into main, and tested our new local LLM feedback layer on a new branch.
-- Alessandro Vivaldi (Engineer): Focused on fine tuning and testing. Fixed our double-printing issue, and conducted further testing of the aligned pipeline across various moods and languages
+- Alessandro Vivaldi (Engineer): Focused on fine tuning and testing. Fixed double-printing issue, and developed a 9 step SER eval plan.
 - Andrew Liu (Product/Reporting): Handled weekly reporting and documentation. Assisted with further testing.
