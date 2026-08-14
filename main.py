@@ -75,7 +75,7 @@ def main():
     
     timeline = AudioTimeline(sample_rate=RATE, max_buffer_seconds=AUDIO_BUFFER_SECONDS)
     
-    def on_utterance(start_sec, end_sec, transcript):
+    def on_utterance(start_sec, end_sec, transcript, translated):
         """Called once Deepgram signals an utterance just finished (UtteranceEnd).
         Slices that exact audio span out of the timeline and queues it for
         sentiment inference, so sentiment is tied to the same sound bite as
@@ -83,7 +83,7 @@ def main():
         
         segment = timeline.slice_seconds(start_sec, end_sec)
         if segment is not None:
-            sentiment.feed_segment(segment, metadata=transcript)
+            sentiment.feed_segment(segment, metadata=translated)
     
 
     # =================================================

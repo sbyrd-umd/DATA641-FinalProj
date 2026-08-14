@@ -27,10 +27,11 @@ def build_user_prompt(turns: List[Dict]) -> str:
             f"{i}. {t['text']}"
             f" (emotion: {t['label']}, intensity: {t['intensity']:.2f}){flag}"
         )
-        lines.append(
-            "\nGive your one coaching note now for the supervisor, focused on the "
-            "most recent (flagged) turn in context of the trend above."
-        )
+
+    lines.append( # Moved this outside loop to not "DOS" the LLM with requests
+        "\nGive your one coaching note now for the supervisor, focused on the "
+        "most recent (flagged) turn in context of the trend above."
+    )
         
     return "\n".join(lines)
         
