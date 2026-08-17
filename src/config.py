@@ -26,6 +26,9 @@ AUDIO_BUFFER_SECONDS = 30.0
 OLLAMA_HOST = "http://localhost:11434"  # Ollama API host
 COACH_MODEL = "llama3.2:3b" # small local instructional model for coaching. 
 
+# OpenAI model config (used in LLM-Feedback-openai branch)
+OPENAI_COACH_MODEL = "gpt-4o-mini"
+
 # how many recent utterances to keep as context for the LLM (text + sentiment)
 COACH_BUFFER_SIZE = 8
 

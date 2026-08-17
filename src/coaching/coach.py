@@ -4,7 +4,7 @@ import time
 from collections import deque
 from typing import Deque, Dict, List
 
-from .client import OllamaClient
+from .client import OpenAIClient
 from .prompts import SYSTEM_PROMPT, build_user_prompt
 
 
@@ -21,13 +21,12 @@ class CoachingEngine:
         self,
         on_note,
         model: str,
-        host: str = "http://localhost:11434",
         buffer_size: int = 8,
         cooldown_seconds: float = 20.0,
         intensity_threshold: float = 0.0,
     ):
         self.on_note = on_note
-        self.client = OllamaClient(model=model, host=host)
+        self.client = OpenAIClient(model=model)
         self.cooldown_seconds = cooldown_seconds
         self.intensity_threshold = intensity_threshold
         

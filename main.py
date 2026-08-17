@@ -3,7 +3,7 @@ import uuid
 from deepgram.core.events import EventType
 from dotenv import load_dotenv
 from src.audio import AudioTimeline, MicStreamer
-from src.coaching import CoachingEngine, OllamaServer
+from src.coaching import CoachingEngine
 from src.config import (
     AUDIO_BUFFER_SECONDS, 
     CHANNELS, 
@@ -13,10 +13,7 @@ from src.config import (
     COACH_BUFFER_SIZE,
     COACH_COOLDOWN_SECONDS,
     COACH_INTENSITY_THRESHOLD,
-    COACH_MODEL,
-    COACH_WARM_UP,
-    OLLAMA_HOST,
-    OLLAMA_STARTUP_TIMEOUT,
+    OPENAI_COACH_MODEL,
     )
 from src.evaluation.logger import log_utterance, log_coaching
 from src.sentiment import SentimentAnalyzer
@@ -79,13 +76,9 @@ def main():
     client = make_client()
     session_id = str(uuid.uuid4())                 # one session id per run
     
-    ollama_server = OllamaServer(host=OLLAMA_HOST, model=COACH_MODEL, startup_timeout=OLLAMA_STARTUP_TIMEOUT)
-    ollama_server.start(warm_up=COACH_WARM_UP)
-    
     coach = CoachingEngine(
         on_note=on_coaching_note,
-        model=COACH_MODEL,
-        host=OLLAMA_HOST,
+        model=OPENAI_COACH_MODEL,                 
         buffer_size=COACH_BUFFER_SIZE,
         cooldown_seconds=COACH_COOLDOWN_SECONDS,
         intensity_threshold=COACH_INTENSITY_THRESHOLD,
@@ -135,7 +128,6 @@ def main():
             mic.stop()
             sentiment.stop()
             coach.stop()
-            ollama_server.stop()
 
 
 if __name__ == "__main__":

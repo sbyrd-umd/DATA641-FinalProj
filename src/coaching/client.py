@@ -1,4 +1,6 @@
 import requests
+import os
+from openai import OpenAI
 
 class OllamaClient:
     """
@@ -31,3 +33,27 @@ class OllamaClient:
         )
         resp.raise_for_status()
         return resp.json()["message"]["content"].strip()
+
+class OpenAIClient:
+    """
+    Thin wrapper around OpenAI's chat completions endpoint.
+    Requires OPENAI_API_KEY in the environment.
+    """
+
+    def __init__(self, model: str = "gpt-4o-mini", timeout: float = 20.0):
+        self.model = model
+        self.timeout = timeout
+        self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    def chat(self, system: str, user: str) -> str:
+        """Send a chat request to OpenAI and return the response text."""
+        response = self._client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user}
+            ],
+            temperature=0.4,
+            max_tokens=80,
+        )
+        return response.choices[0].message.content.strip()
