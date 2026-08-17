@@ -40,8 +40,9 @@ class _UtteranceTracker:
         self._end: Optional[float] = None       # End time
         self._parts: List[str] = []             # transcript parts
         self._translated_parts: List[str] = []
+        self._lang_code: str = "en"
 
-    def add_final(self, start: float, duration: float, text: str, translated: str):
+    def add_final(self, start: float, duration: float, text: str, translated: str, lang_code: str):
         """Record a finalized (is_final=True) transcript chunk."""
         if self._start is None:
             self._start = start
@@ -49,6 +50,7 @@ class _UtteranceTracker:
         if text:
             self._parts.append(text)
             self._translated_parts.append(translated)
+        self._lang_code = lang_code 
 
     def close(self, last_word_end: float):
         """
@@ -62,13 +64,15 @@ class _UtteranceTracker:
         end = max(self._end or last_word_end, last_word_end)
         text = " ".join(self._parts)
         translated = " ".join(self._translated_parts) # Build translated text
+        lang_code = self._lang_code
 
         self._start = None
         self._end = None
         self._parts = []
-        self._translated_parts = [] 
+        self._translated_parts = []
+        self._lang_code = "en"
 
-        return start, end, text, translated
+        return start, end, text, translated, lang_code
 
 
 def make_on_message(on_utterance=None, print_fn=print):
@@ -110,12 +114,12 @@ def make_on_message(on_utterance=None, print_fn=print):
                     else:
                         translated = transcript
                             
-                    tracker.add_final(result.start, result.duration, transcript, translated)
+                    tracker.add_final(result.start, result.duration, transcript, translated, lang_code)
                     
         elif result.type == "UtteranceEnd":
             closed = tracker.close(result.last_word_end)
             if closed and on_utterance:
-                start, end, text, translated = closed           
-                on_utterance(start, end, text, translated)
+                start, end, text, translated, lang_code = closed           
+                on_utterance(start, end, text, translated, lang_code)
 
     return on_message

@@ -47,7 +47,7 @@ class CoachingEngine:
         self._stop_event.set()
         self._worker.join()
         
-    def feed(self, text: str, sentiment_result: dict):
+    def feed(self, text: str, sentiment_result: dict, utterance_id: str):
         """
         Call once per utterance, after sentiment inference finishes for it.
         Always buffers the turn for context; only queues an LLM call when
@@ -59,14 +59,16 @@ class CoachingEngine:
             "label": sentiment_result["label"],
             "intensity": sentiment_result["intensity"],
             "flagged": sentiment_result["flagged"],
+            "utterance_id": utterance_id, 
         }
         with self._lock:
             self._buffer.append(turn)
             turns_snapshot = list(self._buffer)
             
         if self._should_trigger(turn):
-            self._last_note_time = time.time()  # reserve the slot immediately (avoid duplicate triggers while queued)
-            self._queue.put(turns_snapshot)
+            trigger_time = time.time()
+            self._last_note_time = trigger_time  # reserve the slot immediately (avoid duplicate triggers while queued)
+            self._queue.put((turns_snapshot, utterance_id, trigger_time))
             
     def _should_trigger(self, turn: Dict) -> bool:
         """
@@ -87,7 +89,7 @@ class CoachingEngine:
         
         while not self._stop_event.is_set():
             try:
-                turns = self._queue.get(timeout=0.5)
+                turns, utterance_id, trigger_time = self._queue.get(timeout=0.5) 
             except queue.Empty:
                 continue
             
@@ -95,5 +97,6 @@ class CoachingEngine:
                 note = self.client.chat(SYSTEM_PROMPT, build_user_prompt(turns))
             except Exception as e:
                 note = f"(coach unavailable: {e})"
-                
-            self.on_note(note)
+
+            latency_ms = (time.time() - trigger_time) * 1000      # calculate latency
+            self.on_note(note, utterance_id, latency_ms)           

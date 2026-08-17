@@ -1,8 +1,7 @@
 import threading
-
+import uuid
 from deepgram.core.events import EventType
 from dotenv import load_dotenv
-
 from src.audio import AudioTimeline, MicStreamer
 from src.coaching import CoachingEngine, OllamaServer
 from src.config import (
@@ -19,6 +18,7 @@ from src.config import (
     OLLAMA_HOST,
     OLLAMA_STARTUP_TIMEOUT,
     )
+from src.evaluation.logger import log_utterance, log_coaching
 from src.sentiment import SentimentAnalyzer
 from src.transcription import make_client, make_on_message, open_connection
 
@@ -29,7 +29,7 @@ load_dotenv()
 # Sentiment result callback (fires once per utterance) |
 # =====================================================
 
-def make_on_sentiment_result(coach: CoachingEngine):
+def make_on_sentiment_result(coach: CoachingEngine, session_id: str):
     def on_sentiment_result(result):
         flag = " !! " if result["flagged"] else "    "
         print(
@@ -38,9 +38,30 @@ def make_on_sentiment_result(coach: CoachingEngine):
             f"valence: {result['valence']:.2f}, "
             f"dominance: {result['dominance']:.2f})"
         )
-        text = result.get("metadata")
-        if text:
-            coach.feed(text, result)
+        metadata = result.get("metadata")
+        if not metadata:
+            return
+
+        utterance_id = metadata["utterance_id"]   # extract from dict
+        text = metadata["text"]                    # translated
+        original = metadata["original"]            # original language
+        language = metadata["language"]            # lang code
+
+        log_utterance(                             # log every utterance
+            utterance_id=utterance_id,
+            session_id=session_id,
+            language=language,
+            original_text=original,
+            translated_text=text,
+            arousal=result["arousal"],
+            valence=result["valence"],
+            dominance=result["dominance"],
+            label=result["label"],
+            intensity=result["intensity"],
+            flagged=result["flagged"],
+        )
+
+        coach.feed(text, result, utterance_id)   
 
     return on_sentiment_result
 
@@ -49,12 +70,14 @@ def make_on_sentiment_result(coach: CoachingEngine):
 # flagged sentiment + past cooldown -- see coach.py)   |
 # =====================================================
 
-def on_coaching_note(note: str):
+def on_coaching_note(note: str, utterance_id: str, latency_ms: float):
     print(f"\n[COACH]\n{note}\n")
+    log_coaching(utterance_id, note, latency_ms) # Log coaching note
 
 
 def main():
     client = make_client()
+    session_id = str(uuid.uuid4())                 # one session id per run
     
     ollama_server = OllamaServer(host=OLLAMA_HOST, model=COACH_MODEL, startup_timeout=OLLAMA_STARTUP_TIMEOUT)
     ollama_server.start(warm_up=COACH_WARM_UP)
@@ -70,12 +93,12 @@ def main():
     coach.start()
 
     # removed window_seconds and hop_seconds cuz we dont need
-    sentiment = SentimentAnalyzer(on_result=make_on_sentiment_result(coach), sample_rate=RATE)
+    sentiment = SentimentAnalyzer(on_result=make_on_sentiment_result(coach, session_id), sample_rate=RATE)
     sentiment.start()
     
     timeline = AudioTimeline(sample_rate=RATE, max_buffer_seconds=AUDIO_BUFFER_SECONDS)
     
-    def on_utterance(start_sec, end_sec, transcript, translated):
+    def on_utterance(start_sec, end_sec, transcript, translated, language):
         """Called once Deepgram signals an utterance just finished (UtteranceEnd).
         Slices that exact audio span out of the timeline and queues it for
         sentiment inference, so sentiment is tied to the same sound bite as
@@ -83,7 +106,12 @@ def main():
         
         segment = timeline.slice_seconds(start_sec, end_sec)
         if segment is not None:
-            sentiment.feed_segment(segment, metadata=translated)
+            sentiment.feed_segment(segment, metadata={   # metadata is now a dict
+                "utterance_id": str(uuid.uuid4()),
+                "text": translated,
+                "original": transcript,
+                "language": language,
+            })
     
 
     # =================================================
