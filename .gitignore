@@ -3,4 +3,3 @@ SERvenv/
 test.py
 *.pyc
 __pycache__/
-src/evaluation/evaluation_log.csv
