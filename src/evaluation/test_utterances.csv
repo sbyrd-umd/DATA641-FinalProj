@@ -1,0 +1,31 @@
+id,category,english,italian,spanish
+H01,hostile,This is absolutely unacceptable I want to speak to your manager right now.,Questo è assolutamente inaccettabile voglio parlare con il tuo responsabile adesso.,Esto es absolutamente inaceptable quiero hablar con tu gerente ahora mismo.
+H02,hostile,You people have wasted my entire day I am furious.,Voi mi avete fatto perdere tutta la giornata sono furioso.,Ustedes me han hecho perder todo el día estoy furioso.
+H03,hostile,Why does nobody ever fix anything around here this is ridiculous.,Perché non si sistema mai niente qui è ridicolo.,Por qué nadie arregla nada aquí esto es ridículo.
+H04,hostile,I have called five times and nobody has helped me what is wrong with you.,Ho chiamato cinque volte e nessuno mi ha aiutato cosa vi prende.,He llamado cinco veces y nadie me ha ayudado qué les pasa.
+H05,hostile,This is the worst service I have ever experienced in my life.,Questo è il peggior servizio che abbia mai ricevuto in vita mia.,Este es el peor servicio que he experimentado en mi vida.
+H06,hostile,I am not paying for this you have completely failed me.,Non pagherò per questo mi avete completamente deluso.,No voy a pagar por esto me han fallado completamente.
+H07,hostile,Stop putting me on hold I have been waiting for forty minutes.,Smettila di mettermi in attesa aspetto da quaranta minuti.,Deja de ponerme en espera llevo cuarenta minutos esperando.
+H08,hostile,You clearly have no idea what you are doing this is a disaster.,Chiaramente non sai quello che stai facendo è un disastro.,Claramente no saben lo que están haciendo esto es un desastre.
+H09,hostile,I want a refund immediately or I will dispute this charge.,Voglio un rimborso immediatamente o contesterò l'addebito.,Quiero un reembolso de inmediato o disputaré el cargo.
+H10,hostile,This is the third time this has happened I am done with your company.,È la terza volta che succede ho finito con la vostra azienda.,Esta es la tercera vez que pasa esto terminé con su empresa.
+N01,neutral,I would like to check the status of my order please.,Vorrei verificare lo stato del mio ordine per favore.,Me gustaría verificar el estado de mi pedido por favor.
+N02,neutral,Can you tell me what my account balance is.,Può dirmi qual è il saldo del mio conto.,¿Puede decirme cuál es el saldo de mi cuenta?
+N03,neutral,I need to update my shipping address for the next delivery.,Devo aggiornare il mio indirizzo di spedizione per la prossima consegna.,Necesito actualizar mi dirección de envío para la próxima entrega.
+N04,neutral,I was charged twice for the same item last month.,Mi è stato addebitato due volte lo stesso articolo il mese scorso.,Me cobraron dos veces el mismo artículo el mes pasado.
+N05,neutral,I have a question about my subscription plan.,Ho una domanda sul mio piano di abbonamento.,Tengo una pregunta sobre mi plan de suscripción.
+N06,neutral,My package has not arrived yet the expected date was yesterday.,Il mio pacco non è ancora arrivato la data prevista era ieri.,Mi paquete no ha llegado todavía la fecha esperada era ayer.
+N07,neutral,I would like to cancel my appointment scheduled for Friday.,Vorrei cancellare il mio appuntamento previsto per venerdì.,Me gustaría cancelar mi cita programada para el viernes.
+N08,neutral,Can you explain the difference between the two plans you offer.,Può spiegarmi la differenza tra i due piani che offrite.,¿Puede explicarme la diferencia entre los dos planes que ofrecen?
+N09,neutral,I need a receipt for my purchase from last week.,Ho bisogno di una ricevuta per il mio acquisto della settimana scorsa.,Necesito un recibo de mi compra de la semana pasada.
+N10,neutral,I am calling to confirm my reservation for next Tuesday.,Chiamo per confermare la mia prenotazione per martedì prossimo.,Llamo para confirmar mi reserva para el próximo martes.
+P01,happy,I just received my order and everything is perfect thank you so much.,Ho appena ricevuto il mio ordine e tutto è perfetto grazie mille.,Acabo de recibir mi pedido y todo está perfecto muchas gracias.
+P02,happy,Your team was incredibly helpful I really appreciate it.,Il vostro team è stato incredibilmente disponibile lo apprezzo davvero.,Su equipo fue increíblemente útil realmente lo agradezco.
+P03,happy,I have been a customer for years and I am always satisfied.,Sono cliente da anni e sono sempre soddisfatto.,Soy cliente desde hace años y siempre estoy satisfecho.
+P04,happy,The agent I spoke with last time was wonderful please pass along my thanks.,L'agente con cui ho parlato l'ultima volta era fantastico trasmettete i miei ringraziamenti.,El agente con quien hablé la última vez fue maravilloso por favor transmitan mis agradecimientos.
+P05,happy,I am so glad you were able to resolve this so quickly.,Sono così contento che abbiate risolto tutto così rapidamente.,Estoy muy contento de que hayan podido resolver esto tan rápidamente.
+P06,happy,This has been the best customer service experience I have ever had.,Questa è stata la migliore esperienza di servizio clienti che abbia mai avuto.,Esta ha sido la mejor experiencia de servicio al cliente que he tenido.
+P07,happy,I just wanted to call and say how happy I am with your product.,Volevo solo chiamare per dire quanto sono felice del vostro prodotto.,Solo quería llamar para decir lo feliz que estoy con su producto.
+P08,happy,Everything worked out perfectly I could not be more pleased.,È andato tutto perfettamente non potrei essere più soddisfatto.,Todo salió perfectamente no podría estar más satisfecho.
+P09,happy,Thank you for going above and beyond to help me today.,Grazie per aver fatto il possibile e anche di più per aiutarmi oggi.,Gracias por ir más allá para ayudarme hoy.
+P10,happy,I am really impressed with how professional your staff is.,Sono davvero impressionato dalla professionalità del vostro personale.,Estoy realmente impresionado con lo profesional que es su personal.
