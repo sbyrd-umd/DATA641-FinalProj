@@ -1,0 +1,16 @@
+metric,language,category,value
+trigger_precision_overall_%,all,all,75.56
+false_positives,all,all,2.0
+false_negatives,all,all,20.0
+trigger_precision_%,en,all,93.33
+trigger_precision_%,es,all,63.33
+trigger_precision_%,it,all,70.0
+trigger_precision_%,all,happy,96.67
+trigger_precision_%,all,hostile,33.33
+trigger_precision_%,all,neutral,96.67
+avg_latency_ms,all,all,4578.98
+min_latency_ms,all,all,3305.56
+max_latency_ms,all,all,11094.32
+hostile_flag_rate_%,en,hostile,90.0
+hostile_flag_rate_%,es,hostile,0.0
+hostile_flag_rate_%,it,hostile,10.0
