@@ -22,7 +22,7 @@ The system works end-to-end as follows: Two users simultaneously receive the liv
 
 We chose 2 pivotal design choices that would define our product. We analyze sentiment on the *original-language audio* rather than on translated text. Again, this is because transcriptions lose the emotional information, but acoustic features like tone and speech pacing survive language boundaries. Second, everything possible runs locally and for free. The emotion model and coach LLM are on-device, and hosted components like Deepgram and Google Translate have free tiers. This allows us to keep our product as low-cost as possible and separates Inflection from industry-standard enterprise alternatives.
 
-*The current build is a terminal app using microphone input.*
+***The current build is a terminal app using microphone input.***
 
 ## NLP Method and Evaluation
 
