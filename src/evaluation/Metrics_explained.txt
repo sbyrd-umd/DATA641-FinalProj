@@ -1,0 +1,29 @@
+Metric 1: Tone-Text Agreement (Manual Rubric)
+
+For every row in the CSV where coaching_note is not empty, read the note and score it on two dimensions:
+
+Dimension 1 - Tone Alignment (1-3): Does the note reflect the emotion label in the label column?
+
+3: clearly references or responds to the hostile/intense tone (mentions escalation, de-escalation, aggression, anger)
+2: somewhat relevant but vague, could apply to any call
+1: ignores the tone signal entirely, generic advice unrelated to the emotion
+
+Dimension 2 - Actionability (1-3): Is the advice concrete and useful for a supervisor?
+
+3: specific action suggested (e.g. "escalate to manager", "acknowledge the customer's wait time")
+2: general direction given but not specific enough to act on immediately
+1: too vague to act on ("be empathetic", "handle professionally")
+
+Average both dimensions separately across all scored notes per model. Higher average = better.
+
+Metric 2: Coaching Trigger Precision
+
+Fully automated. For every row, the pipeline either flagged it (flagged=True) or didn't. Ground truth: hostile sentences should be flagged, neutral and happy should not. Computed values include overall accuracy, false positives (flagged but shouldn't have been), false negatives (not flagged but should have been), and breakdown by language (EN/IT/ES) and category (hostile/neutral/happy).
+
+Metric 3: Processing Latency
+
+Fully automated. Measured from when all 3 trigger conditions are met (_should_trigger returns True, job queued) to when on_coaching_note fires. Deliberately excludes Deepgram transcription time and speech duration - we only measure what our pipeline controls, isolating our system's performance from external variables. Reported as average, min, and max in milliseconds, compared across both models.
+
+Metric 4: Cross-Language Consistency
+
+Fully automated. Takes only the hostile sentences and checks what percentage were flagged per language (EN/IT/ES). Since the same sentences were delivered with the same emotional delivery across all three languages, a consistent pipeline should flag them at similar rates. Measures how well the acoustic model generalizes across languages.
